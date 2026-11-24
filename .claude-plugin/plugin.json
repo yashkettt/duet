@@ -1,0 +1,6 @@
+{
+  "name": "duet",
+  "version": "0.2.0",
+  "description": "Claude Code и Codex (ChatGPT) работают в паре: Claude сам делит задачи и отдаёт Codex его часть.",
+  "author": { "name": "Yakov" }
+}

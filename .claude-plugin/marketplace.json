@@ -1,0 +1,11 @@
+{
+  "name": "duet",
+  "owner": { "name": "Yakov" },
+  "plugins": [
+    {
+      "name": "duet",
+      "source": "./",
+      "description": "Claude Code и Codex (ChatGPT) работают в паре и делят задачи."
+    }
+  ]
+}
