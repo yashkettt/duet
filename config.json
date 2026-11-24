@@ -1,0 +1,15 @@
+{
+  "route": {
+    "plan": "claude",
+    "text": "claude",
+    "design": "claude",
+    "review": "claude",
+    "code": "codex",
+    "test": "codex",
+    "fix": "codex"
+  },
+  "crossReview": true,
+  "maxDiffChars": 60000,
+  "claude": { "model": "" },
+  "codex": { "model": "" }
+}
