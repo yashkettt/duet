@@ -1,31 +1,31 @@
-# Дуэт
+# Duet
 
-Плагин для Claude Code: Claude и Codex (ChatGPT) работают в паре. Ты пишешь Claude как обычно, а он сам делит задачу и отдаёт Codex его часть: код по ТЗ, тесты, фиксы, скрипты. Пока Codex работает, Claude делает свою часть, а потом собирает результат. У каждого свои лимиты: Claude тратит лимиты подписки Claude, Codex тратит лимиты ChatGPT.
+A Claude Code plugin that lets Claude and Codex (ChatGPT) work together. You talk to Claude as usual, and Claude splits the task and sends Codex its part: implementing code from a clear spec, tests, fixes, or scripts. While Codex works, Claude handles its part, then brings the results together. Each agent uses its own plan limits: Claude uses your Claude subscription, and Codex uses your ChatGPT plan.
 
-## Установка
+## Installation
 
-Что нужно заранее:
-- PowerShell 7 (`pwsh`) и git;
-- Codex CLI: `npm i -g @openai/codex`, потом `codex login`. Работает на любом тарифе ChatGPT, включая Go.
+Prerequisites:
+- PowerShell 7 (`pwsh`) and git;
+- Codex CLI: `npm i -g @openai/codex`, then `codex login`. It works with any ChatGPT plan, including Go.
 
-В Claude Code:
+In Claude Code:
 ```
 /plugin marketplace add yashkettt/duet
 /plugin install duet@duet
 ```
-Репозиторий приватный, поэтому git на этом ПК должен быть залогинен в GitHub.
+The repository is private, so git on this PC must be authenticated with GitHub.
 
-## Как это работает
+## How it works
 
-- **Хук SessionStart.** В начале каждой сессии проверяет, что Codex установлен и залогинен, и даёт Claude правила дележа: кому что и как отдать.
-- **`scripts/codex-task.ps1`.** Claude вызывает его в фоне. Скрипт запускает `codex exec` в папке проекта (песочница `workspace-write`, без коммитов) и печатает отчёт Codex.
-- **`/duet:codex <задача>`.** Отдаёт задачу Codex вручную.
-- Если у Codex кончился лимит или он упал, Claude видит `CODEX_UNAVAILABLE` и доделывает сам.
-- Логи Codex лежат в `%TEMP%\duet\`.
+- **SessionStart hook.** At the start of each session, it checks that Codex is installed and logged in, then gives Claude rules for splitting and delegating tasks.
+- **`scripts/codex-task.ps1`.** Claude runs this in the background. The script runs `codex exec` in the project folder (`workspace-write` sandbox, no commits) and prints Codex's report.
+- **`/duet:codex <task>`.** Sends a task to Codex manually.
+- If Codex runs out of plan limits or fails, Claude sees `CODEX_UNAVAILABLE` and finishes the work itself.
+- Codex logs are stored in `%TEMP%\duet\`.
 
-## Очередь задач (необязательно)
+## Task queue (optional)
 
-`duet.ps1` разбирает очередь из `tasks.md` без участия Claude-сессии: каждая задача уходит в свою ветку `duet/<id>`, второй агент делает ревью. Подробности в `tasks.example.md`.
+`duet.ps1` processes the queue in `tasks.md` without a Claude session: each task gets its own `duet/<id>` branch, and the other agent reviews the result. See `tasks.example.md` for details.
 ```powershell
 ./duet.ps1 -DryRun; ./duet.ps1
 ```

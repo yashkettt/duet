@@ -1,6 +1,6 @@
 {
   "name": "duet",
-  "version": "0.2.0",
-  "description": "Claude Code и Codex (ChatGPT) работают в паре: Claude сам делит задачи и отдаёт Codex его часть.",
+  "version": "0.2.1",
+  "description": "Claude Code and Codex (ChatGPT) work together: Claude splits tasks and delegates Codex's part.",
   "author": { "name": "Yakov" }
 }

@@ -5,7 +5,7 @@
     {
       "name": "duet",
       "source": "./",
-      "description": "Claude Code и Codex (ChatGPT) работают в паре и делят задачи."
+      "description": "Claude Code and Codex (ChatGPT) work together and share tasks."
     }
   ]
 }

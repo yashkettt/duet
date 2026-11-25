@@ -1,13 +1,13 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-  Дуэт: раздаёт задачи из tasks.md агентам Claude Code и Codex, второй агент делает ревью.
+  Duet assigns tasks from tasks.md to Claude Code and Codex; the other agent reviews the work.
 .EXAMPLE
-  ./duet.ps1           # пройти всю очередь
+  ./duet.ps1           # process the whole queue
 .EXAMPLE
-  ./duet.ps1 -Once     # выполнить одну задачу
+  ./duet.ps1 -Once     # process one task
 .EXAMPLE
-  ./duet.ps1 -DryRun   # только показать, кому что уйдёт
+  ./duet.ps1 -DryRun   # show which agent gets each task
 #>
 param([switch]$Once, [switch]$DryRun)
 
@@ -46,7 +46,7 @@ function Invoke-Agent([string]$Agent, [string]$Prompt, [string]$Dir, [switch]$Re
     Push-Location $Dir
     try { $out = $Prompt | & claude @a | Out-String; $code = $LASTEXITCODE }
     finally { Pop-Location }
-    if ($code) { throw "claude завершился с кодом $code. $out" }
+    if ($code) { throw "claude exited with code $code. $out" }
     return $out.Trim()
   }
   if ($Agent -eq 'codex') {
@@ -59,11 +59,11 @@ function Invoke-Agent([string]$Agent, [string]$Prompt, [string]$Dir, [switch]$Re
     Remove-Item $last.FullName -ErrorAction SilentlyContinue
     if ($code) {
       $tail = $log.Length -gt 3000 ? $log.Substring($log.Length - 3000) : $log
-      throw "codex завершился с кодом $code. $tail"
+      throw "codex exited with code $code. $tail"
     }
     return "$out".Trim()
   }
-  throw "неизвестный агент: $Agent"
+  throw "Unknown agent: $Agent"
 }
 
 function Set-TaskLine([string]$Old, [string]$New) {
@@ -79,22 +79,22 @@ foreach ($line in @(Get-Content $TasksFile -Encoding utf8)) {
   $worker = $Config.route.$type
   $reviewer = $worker -eq 'claude' ? 'codex' : 'claude'
 
-  if ($DryRun) { Write-Host "$type → $worker (ревью: $reviewer) | $($script:Proj) | $text"; continue }
+  if ($DryRun) { Write-Host "$type → $worker (review: $reviewer) | $($script:Proj) | $text"; continue }
 
   $id = Get-Date -Format 'yyyyMMdd-HHmmss'
   $branch = "duet/$id"
   $note = Join-Path $NotesDir "$id.md"
   $base = $null
   try {
-    if (-not $worker) { throw "неизвестный тип «$type», см. route в config.json" }
-    if (-not (Test-Path $script:Proj)) { throw "нет папки $($script:Proj)" }
+    if (-not $worker) { throw "Unknown type '$type'; see route in config.json" }
+    if (-not (Test-Path $script:Proj)) { throw "Folder not found: $($script:Proj)" }
     Invoke-Git rev-parse --is-inside-work-tree | Out-Null
-    if (Invoke-Git status --porcelain) { throw 'в проекте есть незакоммиченные изменения, закоммить или спрячь их' }
+    if (Invoke-Git status --porcelain) { throw 'The project has uncommitted changes; commit or stash them' }
     $base = Invoke-Git branch --show-current
-    if (-not $base) { throw 'проект не на ветке (detached HEAD)' }
+    if (-not $base) { throw 'The project is not on a branch (detached HEAD)' }
     Invoke-Git switch -c $branch | Out-Null
 
-    Write-Host "▶ [$id] $worker делает: $text"
+    Write-Host "▶ [$id] $worker is working on: $text"
     try {
       $answer = Invoke-Agent $worker (Get-Prompt 'worker' @{ TYPE = $type; TASK = $text; ID = $id }) $script:Proj
     } finally {
@@ -105,33 +105,33 @@ foreach ($line in @(Get-Content $TasksFile -Encoding utf8)) {
     }
 
     $diff = Invoke-Git diff "$base..HEAD"
-    if ($diff.Length -gt $Config.maxDiffChars) { $diff = $diff.Substring(0, $Config.maxDiffChars) + "`n... (дифф обрезан)" }
-    $md = "# $id`n`n- Тип: $type`n- Проект: $($script:Proj)`n- Ветка: $branch`n- Задача: $text`n`n## Исполнитель: $worker`n`n$answer`n"
+    if ($diff.Length -gt $Config.maxDiffChars) { $diff = $diff.Substring(0, $Config.maxDiffChars) + "`n... (diff truncated)" }
+    $md = "# $id`n`n- Type: $type`n- Project: $($script:Proj)`n- Branch: $branch`n- Task: $text`n`n## Worker: $worker`n`n$answer`n"
 
-    $verdict = 'без ревью'
+    $verdict = 'not reviewed'
     if ($Config.crossReview) {
-      Write-Host "  $reviewer проверяет..."
-      $vars = @{ TASK = $text; WORKER = $worker; ANSWER = $answer; DIFF = ($diff ? $diff : '(файлы не менялись)') }
+      Write-Host "  $reviewer is reviewing..."
+      $vars = @{ TASK = $text; WORKER = $worker; ANSWER = $answer; DIFF = ($diff ? $diff : '(no files changed)') }
       $review = Invoke-Agent $reviewer (Get-Prompt 'reviewer' $vars) $script:Proj -ReadOnly
-      $md += "`n## Ревью: $reviewer`n`n$review`n"
-      $verdict = $review -match 'Вердикт:\s*\**\s*([^\r\n*]+)' ? "ревью: $($Matches[1].Trim())" : 'ревью: см. заметку'
+      $md += "`n## Review: $reviewer`n`n$review`n"
+      $verdict = $review -match 'Verdict:\s*\**\s*(OK|ISSUES|BAD)\b' ? "review: $($Matches[1])" : 'review: see note'
     }
     Set-Content $note $md -Encoding utf8
 
     $hasCommits = [int](Invoke-Git rev-list --count "$base..$branch") -gt 0
     Invoke-Git switch $base | Out-Null
-    if (-not $hasCommits) { Invoke-Git branch -D $branch | Out-Null; $where = 'без изменений в файлах' } else { $where = $branch }
+    if (-not $hasCommits) { Invoke-Git branch -D $branch | Out-Null; $where = 'no file changes' } else { $where = $branch }
     Set-TaskLine $line (($line -replace '^- \[ \]', '- [x]') + " → $where, $verdict (notes/$id.md)")
     Write-Host "✔ [$id] $where, $verdict"
   } catch {
     $err = ($_.Exception.Message -split "`n")[0]
-    Add-Content $note "`n## Ошибка`n`n$($_.Exception.Message)`n" -Encoding utf8
+    Add-Content $note "`n## Error`n`n$($_.Exception.Message)`n" -Encoding utf8
     if ($base) { try { Invoke-Git switch $base | Out-Null } catch {} }
-    Set-TaskLine $line (($line -replace '^- \[ \]', '- [!]') + " → ошибка: $err (notes/$id.md)")
+    Set-TaskLine $line (($line -replace '^- \[ \]', '- [!]') + " → error: $err (notes/$id.md)")
     Write-Host "✖ [$id] $err" -ForegroundColor Red
   }
   $done++
   if ($Once) { break }
-  Start-Sleep -Seconds 1  # чтобы id следующей задачи не совпал
+  Start-Sleep -Seconds 1  # avoid reusing the same ID for the next task
 }
-if (-not $DryRun) { Write-Host "Готово, задач обработано: $done" }
+if (-not $DryRun) { Write-Host "Done. Tasks processed: $done" }

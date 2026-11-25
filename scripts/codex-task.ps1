@@ -1,9 +1,9 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-  Отдаёт одну задачу Codex CLI и печатает его отчёт. Запускается Claude из плагина Дуэт.
+  Sends one task to Codex CLI and prints its report. Run by Claude from the Duet plugin.
 .EXAMPLE
-  pwsh -File codex-task.ps1 -Dir C:\proj -Task "Напиши тесты для utils.py в tests/test_utils.py"
+  pwsh -File codex-task.ps1 -Dir C:\proj -Task "Write tests for utils.py in tests/test_utils.py"
 .EXAMPLE
   pwsh -File codex-task.ps1 -Dir C:\proj -TaskFile task.md -ReadOnly
 #>
@@ -19,22 +19,22 @@ $utf8 = [Text.UTF8Encoding]::new($false)
 $OutputEncoding = $utf8
 
 if ($TaskFile) { $Task = Get-Content $TaskFile -Raw -Encoding utf8 }
-if (-not $Task) { 'CODEX_UNAVAILABLE: пустая задача'; exit 2 }
-if (-not (Get-Command codex -ErrorAction SilentlyContinue)) { 'CODEX_UNAVAILABLE: codex не установлен'; exit 2 }
+if (-not $Task) { 'CODEX_UNAVAILABLE: empty task'; exit 2 }
+if (-not (Get-Command codex -ErrorAction SilentlyContinue)) { 'CODEX_UNAVAILABLE: codex is not installed'; exit 2 }
 
 $prompt = @"
-Ты работаешь в паре с Claude Code через «Дуэт». Claude отдал тебе часть работы и параллельно делает свою.
+You are working alongside Claude Code through Duet. Claude has delegated part of the work to you and is working on its part in parallel.
 
-Задача:
+Task:
 $Task
 
-Правила:
-- Трогай только файлы, нужные для этой задачи (если они перечислены, то только их). Остальное правит Claude.
-- Не делай git commit, push и не переключай ветки.
-- Сохраняй файлы в UTF-8 без BOM.
-- Если что-то неясно, сделай разумное допущение и укажи его в отчёте.
-- В конце дай короткий отчёт, до 10 строк: что сделал, какие файлы, что проверить, какие допущения.
-Пиши по-русски.
+Rules:
+- Edit only the files needed for this task; if files are listed, edit only those. Claude is handling the rest.
+- Do not commit, push, or switch branches.
+- Save files as UTF-8 without a BOM.
+- If anything is unclear, make a reasonable assumption and mention it in your report.
+- At the end, give a brief report of no more than 10 lines: what you did, which files you changed, what should be checked, and any assumptions.
+Write in English.
 "@
 
 $logDir = Join-Path ([IO.Path]::GetTempPath()) 'duet'
@@ -50,8 +50,8 @@ $code = $LASTEXITCODE
 
 if ($code -or -not (Test-Path $last)) {
   $tail = (Get-Content $log -Tail 15 -ErrorAction SilentlyContinue) -join "`n"
-  "CODEX_UNAVAILABLE: codex завершился с кодом $code. Лог: $log`n$tail"
+  "CODEX_UNAVAILABLE: codex exited with code $code. Log: $log`n$tail"
   exit 1
 }
-"[Codex] отчёт ($last):"
+"[Codex] Report ($last):"
 Get-Content $last -Raw

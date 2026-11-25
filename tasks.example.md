@@ -1,10 +1,10 @@
-# Очередь задач
+# Task queue
 
-Одна задача на строку: `- [ ] тип | папка проекта | что сделать`
-Статусы: `[ ]` ждёт, `[x]` готово, `[!]` ошибка. Дирижёр берёт только `[ ]`.
-Типы: plan, text, design, review → Claude; code, test, fix → Codex (меняется в config.json).
-Проект должен быть git-репозиторием без незакоммиченных изменений.
+One task per line: `- [ ] type | project folder | what to do`
+Statuses: `[ ]` pending, `[x]` done, `[!]` error. The orchestrator only picks up `[ ]`.
+Types: plan, text, design, review → Claude; code, test, fix → Codex (configured in config.json).
+The project must be a git repository with no uncommitted changes.
 
-<!-- Пример:
-- [ ] code | C:\Users\iamya\Documents\ChatGPT\Поиск клиентов | Добавь в README раздел «Как запустить локально»
+<!-- Example:
+- [ ] code | C:\Users\iamya\Documents\ChatGPT\Client Search | Add a "How to run locally" section to the README
 -->

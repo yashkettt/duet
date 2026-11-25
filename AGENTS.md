@@ -1,9 +1,9 @@
-# Дуэт: правила для агентов, которые правят сам этот репозиторий
+# Duet: instructions for agents editing this repository
 
-- Это плагин Claude Code и одновременно маркетплейс (`.claude-plugin/`). Живая связка: `hooks/session-start.ps1` даёт Claude правила дележа, `scripts/codex-task.ps1` вызывает `codex exec`, `commands/codex.md` — команда `/duet:codex`. При изменениях поднимай `version` в plugin.json.
+- This is both a Claude Code plugin and a marketplace (`.claude-plugin/`). The live integration works as follows: `hooks/session-start.ps1` gives Claude task-sharing rules, `scripts/codex-task.ps1` invokes `codex exec`, and `commands/codex.md` defines the `/duet:codex` command. When making changes, bump `version` in plugin.json.
 
-- `duet.ps1` — дирижёр на PowerShell 7. Читает `tasks.md`, вызывает `claude -p` или `codex exec`, коммитит в ветку `duet/<id>` проекта, пишет `notes/<id>.md`.
-- `config.json` — маршруты по типам задач и настройки. `prompts/worker.md` и `prompts/reviewer.md` — шаблоны промптов с плейсхолдерами `{{...}}`.
-- `tasks.md` и `notes/` личные, их нет в git. Образец очереди — `tasks.example.md`.
-- Изменения дирижёра проверяй через `./duet.ps1 -DryRun` и тестовую очередь на временном git-репо, а не на реальных проектах.
-- Пиши по-русски. Ничего не пушь в проектах пользователя.
+- `duet.ps1` is the PowerShell 7 orchestrator. It reads `tasks.md`, invokes `claude -p` or `codex exec`, commits to a `duet/<id>` branch in the project, and writes `notes/<id>.md`.
+- `config.json` contains routes by task type and settings. `prompts/worker.md` and `prompts/reviewer.md` are prompt templates with `{{...}}` placeholders.
+- `tasks.md` and `notes/` are personal and are not in git. See `tasks.example.md` for a sample queue.
+- Check orchestrator changes with `./duet.ps1 -DryRun` and a test queue in a temporary git repository, not in real projects.
+- Write in English. Do not push to users' projects.
